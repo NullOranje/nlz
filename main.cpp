@@ -10,7 +10,7 @@ void print_usage() {
 
 int main(int argc, char *argv[]) {
     // std::vector<uint> dictionary(0);
-    boost::container::stable_vector<uint> dictionary(0);
+    boost::container::stable_vector<uint> dictionary(1);
     std::ifstream input_file;
     std::ofstream output_file;
     std::string mode;
@@ -34,9 +34,9 @@ int main(int argc, char *argv[]) {
 
     // Compression function
     if (mode == "-z") {
-        uint p = 2;  // Max distance pointer
-        uint i = UINT_MAX;  // Last matching index pointer
-        uint s = 0;
+        uint p = 3;  // Max distance pointer
+        uint i = 0;  // Last matching index pointer
+        uint s = 1;
         char in = (char) input_file.get();
         char n = in;
         dictionary.push_back((const uint &) in);
@@ -52,15 +52,15 @@ int main(int argc, char *argv[]) {
                 // Now we're at the end of the list, so we can write
                 dictionary.push_back((const uint &) n);
                 dictionary.push_back(i);
-                i = UINT_MAX;
+                i = 0;
                 p += 2;
-                s = 0;
+                s = 1;
             } else {
                 s += 2;
             }
         }
 
-        if (i != UINT_MAX) {    // This implies that there is nothing to write.
+        if (i != 0) {    // This implies that there is nothing to write.
             dictionary.push_back((const uint &) n);
             dictionary.push_back(dictionary[i + 1]);
         }
@@ -71,11 +71,11 @@ int main(int argc, char *argv[]) {
     uint max_l = 0;
     double total = 0.0;
     // Will if float?
-    for (uint i = 0; i < dictionary.size(); i += 2) {
+    for (uint i = 1; i < dictionary.size(); i += 2) {
         uint s = i;
         uint l = 0;
         std::stack<char> stack;
-        while (s != UINT_MAX) {
+        while (s != 0) {
             char n = (char) dictionary[s];
             s = dictionary[s + 1];
             stack.push(n);
