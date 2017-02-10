@@ -3,14 +3,15 @@
 #include <fstream>
 #include <stack>
 #include <vector>
+#include <cmath>
 
 void print_usage() {
     std::cout << "Usage: nlz [-z compress | -x decompress] input_file output_file" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
-    // std::vector<uint> dictionary(0);
-    boost::container::stable_vector<uint> dictionary(1);
+    std::vector<uint> dictionary(1);
+    //boost::container::stable_vector<uint> dictionary(1);
     std::ifstream input_file;
     std::ofstream output_file;
     std::string mode;
@@ -66,7 +67,45 @@ int main(int argc, char *argv[]) {
         }
     }
 
+    /* Write all this stuff to file */
+    uint c_bytes = (uint) (ceil((log2(dictionary.size() / 2) - 6) / 8) + 1);
+
+    for (int i = 1; i < dictionary.size(); i += 2) {
+        char n = (char) dictionary[i];
+        output_file << (char) dictionary[i];
+        uint idx = dictionary[i+1];
+        uint addl_bytes = 0;
+        if (idx > 0) {
+            idx = (idx - 1) / 2;
+            double bits = log2(idx) + 1;
+            if (bits > 6)
+                addl_bytes = (uint) ceil((bits - 6) / 8);
+
+        }
+        std::stack<char> byte_buffer;
+        uint byte_mask = addl_bytes << (6 + addl_bytes * 8);
+        idx = idx ^ byte_mask;
+        for (int w = 0; w <= addl_bytes; w++) {
+            char btw = (char) (idx & 0xff);
+            byte_buffer.push(btw);
+        }
+
+        while (!byte_buffer.empty()) {
+            output_file << byte_buffer.top();
+            byte_buffer.pop();
+        }
+    }
+
+    output_file.close();
+
     std::cout << "Encoding complete!" << std::endl;
+    std::cout << "Dictionary takes " << (uint) log2(dictionary.size() / 2) << " bits." << std::endl;
+    std::cout << "Dictionary takes " << c_bytes << " byte(s)." << std::endl;
+
+    for (int i = 0; i < dictionary.size(); i++)
+        std::cout << dictionary[i] << " ";
+
+    std::cout << std::endl;
 
     uint max_l = 0;
     double total = 0.0;
@@ -86,11 +125,11 @@ int main(int argc, char *argv[]) {
         total += l;
 
         while (!stack.empty()) {
-            std::cout << stack.top();
-            output_file << stack.top();
+            // std::cout << stack.top();
+            // output_file << stack.top();
             stack.pop();
         }
-        std::cout << std::endl;
+        //std::cout << std::endl;
     }
 
     std::cout << "Dictionary consists of : " << dictionary.size() / 2 << " symbols." << std::endl;
