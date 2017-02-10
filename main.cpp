@@ -2,6 +2,7 @@
 #include <boost/container/stable_vector.hpp>
 #include <fstream>
 #include <stack>
+#include <vector>
 
 void print_usage() {
     std::cout << "Usage: nlz [-z compress | -x decompress] input_file output_file" << std::endl;
@@ -58,8 +59,11 @@ int main(int argc, char *argv[]) {
                 s += 2;
             }
         }
-        dictionary.push_back(n);
-        dictionary.push_back(dictionary[i + 1]);
+
+        if (i != UINT_MAX) {    // This implies that there is nothing to write.
+            dictionary.push_back(n);
+            dictionary.push_back(dictionary[i + 1]);
+        }
     }
 
     uint max_l = 0;
