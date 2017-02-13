@@ -1,9 +1,10 @@
 #include <iostream>
-#include <boost/container/stable_vector.hpp>
 #include <fstream>
 #include <stack>
 #include <vector>
-#include <cmath>
+#include <unordered_map>
+#include <map>
+#include <chrono>
 
 void print_usage() {
     std::cout << "Usage: nlz [-z compress | -x decompress] input_file output_file" << std::endl;
@@ -11,7 +12,7 @@ void print_usage() {
 
 int main(int argc, char *argv[]) {
     std::vector<uint> dictionary(1);
-    //boost::container::stable_vector<uint> dictionary(1);
+    std::map<std::string, uint> cache;
     std::ifstream input_file;
     std::ofstream output_file;
     std::string mode;
@@ -33,26 +34,41 @@ int main(int argc, char *argv[]) {
         print_usage();
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
     if (mode == "-z") {     // Compression function
         uint p = 2;  // Max distance pointer
         uint i = 0;  // Last matching index pointer
         uint s = 2;
         unsigned char in;
         unsigned char n;
+        std::string cache_string;
         while (in = (unsigned char) input_file.get(), input_file.good()) {
             n = in;
-            while ((i != s) && (s < p))
-                if ((dictionary[s - 1] == in) && (dictionary[s] == i))
-                    i = s;
-                else
-                    s += 2;
+            cache_string.push_back(in);
+
+            // Check the cache to see if we've seen this string before
+            auto cache_lookup = cache.find(cache_string);
+            if (cache_lookup == cache.end()) {
+                while ((i != s) && (s < p))
+                    if ((dictionary[s - 1] == in) && (dictionary[s] == i))
+                        i = s;
+                    else
+                        s += 2;
+            } else {
+                i = cache_lookup->second;
+                s = i;
+            }
+
             if (s == p) {
                 // Now we're at the end of the list, so we can write
                 dictionary.push_back(n);
                 dictionary.push_back(i);
+                cache[cache_string] = s;
                 i = 0;
                 p += 2;
                 s = 2;
+                cache_string.clear();
+
             } else {
                 s += 2;
             }
@@ -155,6 +171,9 @@ int main(int argc, char *argv[]) {
             }
         }
     }
+
+    auto stop = std::chrono::high_resolution_clock::now();
+    std::cout << "Running time: " << std::chrono::duration_cast<std::chrono::milliseconds>(stop - start).count() << "ms." << std::endl;
 
     return 0;
 }
