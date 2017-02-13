@@ -33,6 +33,7 @@ int main(int argc, char *argv[]) {
         output_file.open(argv[3]);
     } else {
         print_usage();
+        exit(1);
     }
 
     auto start = std::chrono::high_resolution_clock::now();
