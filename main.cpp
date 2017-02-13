@@ -17,6 +17,7 @@ int main(int argc, char *argv[]) {
     std::ofstream output_file;
     std::string mode;
 
+    /* Command line argument parsing */
     if (argc == 4) {
         mode.assign(argv[1]);
         if (!((mode == "-z") || (mode == "-x"))) {
@@ -113,6 +114,7 @@ int main(int argc, char *argv[]) {
 
         output_file.close();
 
+        // Some statistics
         uint c_bytes = (uint) (ceil((log2(dictionary.size() / 2) - 6) / 8) + 1);
         std::cout << "Encoding complete!" << std::endl;
         std::cout << "Dictionary takes " << (uint) log2(dictionary.size() / 2) << " bits." << std::endl;
