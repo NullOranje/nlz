@@ -63,13 +63,6 @@ int main(int argc, char *argv[]) {
             dictionary.push_back(dictionary[i + 1]);
         }
 
-        // Output the dictionary for reference.  Debugging only
-        for (int i = 1; i < dictionary.size(); i++) {
-            std::cout << dictionary[i] << " ";
-            if (i % 2 == 0)
-                std::cout << std::endl;
-        }
-
         output_file << (unsigned char) 0xff;
         bool is_char = true;
         for (int c = 1; c < dictionary.size(); c++) {
@@ -95,10 +88,8 @@ int main(int argc, char *argv[]) {
                     }
                     while (!byte_buffer.empty()) {
                         output_file << (unsigned char) byte_buffer.top();
-                        std::cout << (unsigned int) byte_buffer.top() << " ";
                         byte_buffer.pop();
                     }
-                    std::cout << std::endl;
                 }
             }
             is_char = !is_char;
@@ -129,7 +120,6 @@ int main(int argc, char *argv[]) {
             offset++;
             if (is_symbol) {
                 dictionary.push_back(in);
-                std::cout << counter << ":" << (uint) in << ":";
                 counter++;
             } else {
                 uint addl_bytes = (uint) ((in & 0xC0) >> 6);
@@ -143,7 +133,6 @@ int main(int argc, char *argv[]) {
                 }
                 uint idx = (uint) t * 2;
                 dictionary.push_back(idx);
-                std::cout << idx << std::endl;
             }
             is_symbol = !is_symbol;
             offset += 1;
@@ -161,12 +150,10 @@ int main(int argc, char *argv[]) {
                 l++;
             }
             while (!stack.empty()) {
-                std::cout << stack.top();
                 output_file << stack.top();
                 stack.pop();
             }
         }
-        std::cout << std::endl;
     }
 
     return 0;
