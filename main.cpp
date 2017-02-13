@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
         uint p = 2;  // Max distance pointer
         uint i = 0;  // Last matching index pointer
         uint s = 2;
-        uint in;
-        uint n;
-        while (in = (uint) input_file.get(), input_file.good()) {
+        unsigned char in;
+        unsigned char n;
+        while (in = (unsigned char) input_file.get(), input_file.good()) {
             n = in;
             while ((i != s) && (s < p))
                 if ((dictionary[s - 1] == in) && (dictionary[s] == i))
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
         }
 
         if (i != 0) {    // This implies that there is nothing to write.
-            dictionary.push_back((const uint &) n);
+            dictionary.push_back(n);
             dictionary.push_back(dictionary[i + 1]);
         }
 
@@ -70,32 +70,35 @@ int main(int argc, char *argv[]) {
                 std::cout << std::endl;
         }
 
-        output_file << (char) 0xff;
+        output_file << (unsigned char) 0xff;
         bool is_char = true;
         for (int c = 1; c < dictionary.size(); c++) {
             if (is_char) {
-                output_file << (char) dictionary[c];
+                output_file << (unsigned char) dictionary[c];
             } else {
                 auto idx = dictionary[c] / 2;
-                double bits = log2(idx);
+                double bits = log2(idx) + 1;
                 uint addl_bytes = 0;
                 if (bits > 6)
-                    addl_bytes = (uint) ceil((bits - 6) / 8);
+                    addl_bytes = (uint) ceil(((bits - 6)) / 8);
                 uint byte_mask = addl_bytes << (6 + addl_bytes * 8);
                 idx = idx ^ byte_mask;
+
                 if (idx == 0) {
-                    output_file << (char) idx;
+                    output_file << (unsigned char) idx;
                 } else {
-                    std::stack<char> byte_buffer;
+                    std::stack<unsigned char> byte_buffer;
                     while (idx > 0) {
-                        char btw = (char) (idx & 0xff);
+                        unsigned char btw = (unsigned char) (idx & 0xff);
                         byte_buffer.push(btw);
                         idx = idx >> 8;
                     }
                     while (!byte_buffer.empty()) {
-                        output_file << byte_buffer.top();
+                        output_file << (unsigned char) byte_buffer.top();
+                        std::cout << (unsigned int) byte_buffer.top() << " ";
                         byte_buffer.pop();
                     }
+                    std::cout << std::endl;
                 }
             }
             is_char = !is_char;
@@ -108,6 +111,7 @@ int main(int argc, char *argv[]) {
         std::cout << "Dictionary takes " << (uint) log2(dictionary.size() / 2) << " bits." << std::endl;
         std::cout << "Dictionary takes " << c_bytes << " byte(s)." << std::endl;
         std::cout << "Dictionary consists of : " << dictionary.size() / 2 << " symbols." << std::endl;
+        std::cout << "Dictionary.size(): " << dictionary.size() << std::endl;
 
     } else if (mode == "-x") {      // Decompression function
         // First thing's first: build our dictionary
@@ -118,23 +122,31 @@ int main(int argc, char *argv[]) {
         }
         dictionary[0] = 0;
         bool is_symbol = true;
-        uint in;
-        while (in = (uint) input_file.get(), input_file.good()) {
+        unsigned int in;
+        int counter = 1;
+        int offset = 0;
+        while (in = (unsigned char) input_file.get(), input_file.good()) {
+            offset++;
             if (is_symbol) {
                 dictionary.push_back(in);
-                is_symbol = false;
+                std::cout << counter << ":" << (uint) in << ":";
+                counter++;
             } else {
                 uint addl_bytes = (uint) ((in & 0xC0) >> 6);
                 in &= 0x3F;
+                uint t = in;
                 for (int i = 0; i < addl_bytes; i++) {
-                    in = in << 8;
-                    uint t = (uint) input_file.get();
-                    in += t;
+                    t = t << 8;
+                    in = (unsigned char) input_file.get();
+                    t += in;
+                    offset++;
                 }
-                uint idx = (uint) in * 2;
+                uint idx = (uint) t * 2;
                 dictionary.push_back(idx);
-                is_symbol = true;
+                std::cout << idx << std::endl;
             }
+            is_symbol = !is_symbol;
+            offset += 1;
         }
 
         // Will if float?
@@ -144,18 +156,15 @@ int main(int argc, char *argv[]) {
             std::stack<char> stack;
             while (s > 0) {
                 char n = (char) dictionary[s - 1];
-                std::cout << s <<  " ";
                 s = dictionary[s];
                 stack.push(n);
                 l++;
             }
-            std::cout << std::endl;
             while (!stack.empty()) {
-                // std::cout << stack.top();
+                std::cout << stack.top();
                 output_file << stack.top();
                 stack.pop();
             }
-
         }
         std::cout << std::endl;
     }
