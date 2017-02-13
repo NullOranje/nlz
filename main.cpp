@@ -60,7 +60,7 @@ int main(int argc, char *argv[]) {
 
         if (i != 0) {    // This implies that there is nothing to write.
             dictionary.push_back(n);
-            dictionary.push_back(dictionary[i + 1]);
+            dictionary.push_back(dictionary[i]);
         }
 
         output_file << (unsigned char) 0xff;
